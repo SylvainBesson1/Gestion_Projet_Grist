@@ -144,13 +144,19 @@ function buildDynamicConfigs() {
 ------------------------------------------------- */
 async function loadSchema() {
   try {
-    schema = await grist.docApi.getSchema();
+    const schema = await grist.docApi.getSchema();
     console.log("Schéma chargé :", schema);
-    buildDynamicConfigs();
+    return schema;
   } catch (e) {
-    console.warn('Schéma indisponible', e);
+    console.error("Erreur lors du chargement du schéma :", e);
   }
 }
+
+async function loadData() {
+  if (!options.table) {
+    console.error("La table n'est pas définie.");
+    return;
+  }
 
 /* -------------------------------------------------
    COLONNES KANBAN (group-by)

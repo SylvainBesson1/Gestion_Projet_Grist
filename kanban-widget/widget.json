@@ -13,7 +13,7 @@
     },
     {
       "name": "titleCol",
-      "label": "Colonne pour le titre de la tâche",
+      "label": "Titre de la tâche",
       "type": "column",
       "tableFrom": "table",
       "required": true,
@@ -21,21 +21,21 @@
     },
     {
       "name": "descCol",
-      "label": "Colonne pour la description",
+      "label": "Description de la tâche",
       "type": "column",
       "tableFrom": "table",
       "description": "Colonne contenant la description de la tâche (optionnel)."
     },
     {
       "name": "dateCol",
-      "label": "Colonne pour la date limite",
+      "label": "Date limite",
       "type": "column",
       "tableFrom": "table",
       "description": "Colonne contenant la date limite de la tâche."
     },
     {
       "name": "statusCol",
-      "label": "Colonne pour l'état",
+      "label": "État de la tâche",
       "type": "column",
       "tableFrom": "table",
       "required": true,
@@ -43,11 +43,25 @@
     },
     {
       "name": "priorityCol",
-      "label": "Colonne pour la priorité",
+      "label": "Priorité de la tâche",
       "type": "column",
       "tableFrom": "table",
       "required": true,
       "description": "Colonne contenant la priorité de la tâche (ex: Élevée, Moyenne, Basse)."
+    },
+    {
+      "name": "assigneeCol",
+      "label": "Assigné à",
+      "type": "column",
+      "tableFrom": "table",
+      "description": "Colonne contenant les personnes assignées à la tâche."
+    },
+    {
+      "name": "projectCol",
+      "label": "Projet/Mission",
+      "type": "column",
+      "tableFrom": "table",
+      "description": "Colonne contenant le projet ou la mission associée à la tâche."
     }
   ]
 }
