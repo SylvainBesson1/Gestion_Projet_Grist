@@ -1,100 +1,53 @@
 {
   "name": "Kanban Tâches",
   "version": "1.0",
-  "description": "Widget Kanban configurable pour Grist.",
+  "description": "Un widget Kanban configurable pour Grist.",
   "icon": "✨",
   "options": [
     {
       "name": "table",
       "label": "Table des tâches",
       "type": "table",
-      "required": true
+      "required": true,
+      "description": "Sélectionnez la table contenant les tâches."
     },
     {
       "name": "titleCol",
-      "label": "Colonne pour le titre",
+      "label": "Colonne pour le titre de la tâche",
       "type": "column",
       "tableFrom": "table",
-      "required": true
+      "required": true,
+      "description": "Colonne contenant le titre de la tâche."
     },
     {
       "name": "descCol",
       "label": "Colonne pour la description",
       "type": "column",
-      "tableFrom": "table"
+      "tableFrom": "table",
+      "description": "Colonne contenant la description de la tâche (optionnel)."
     },
     {
       "name": "dateCol",
-      "label": "Colonne pour la deadline",
+      "label": "Colonne pour la date limite",
       "type": "column",
-      "tableFrom": "table"
-    },
-    {
-      "name": "startDateCol",
-      "label": "Colonne pour la date de début",
-      "type": "column",
-      "tableFrom": "table"
+      "tableFrom": "table",
+      "description": "Colonne contenant la date limite de la tâche."
     },
     {
       "name": "statusCol",
       "label": "Colonne pour l'état",
       "type": "column",
       "tableFrom": "table",
-      "required": true
+      "required": true,
+      "description": "Colonne contenant l'état de la tâche (ex: À faire, En cours, Terminé)."
     },
     {
       "name": "priorityCol",
       "label": "Colonne pour la priorité",
       "type": "column",
       "tableFrom": "table",
-      "required": true
-    },
-    {
-      "name": "typeCol",
-      "label": "Colonne pour le type",
-      "type": "column",
-      "tableFrom": "table"
-    },
-    {
-      "name": "assigneeCol",
-      "label": "Colonne pour les assignés",
-      "type": "column",
-      "tableFrom": "table"
-    },
-    {
-      "name": "assigneeTable",
-      "label": "Table des accompagnateurs",
-      "type": "table"
-    },
-    {
-      "name": "assigneeNameCol",
-      "label": "Colonne pour le nom de l'assigné",
-      "type": "column",
-      "tableFrom": "assigneeTable"
-    },
-    {
-      "name": "projectCol",
-      "label": "Colonne pour le projet",
-      "type": "column",
-      "tableFrom": "table",
-      "required": true
-    },
-    {
-      "name": "projectTable",
-      "label": "Table des projets",
-      "type": "table"
-    },
-    {
-      "name": "projectNameCol",
-      "label": "Colonne pour le nom du projet",
-      "type": "column",
-      "tableFrom": "projectTable"
-    },
-    {
-      "name": "folderCol",
-      "label": "Colonne pour le dossier",
-      "type": "column",
-      "tableFrom": "table"
+      "required": true,
+      "description": "Colonne contenant la priorité de la tâche (ex: Élevée, Moyenne, Basse)."
     }
   ]
 }
