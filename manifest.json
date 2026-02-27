@@ -1,0 +1,11 @@
+{
+  "apiVersion": "1",
+  "name": "Kanban Tâches Configurable",
+  "version": "1.0",
+  "description": "Un widget Kanban  pour gérer les tâches dans Grist. Permet de sélectionner dynamiquement les colonnes pour le titre, la description, la priorité, l'état, etc.",
+  "icon": "✨",
+  "author": "Sylvain Besson / CNRS",
+  "gristApiVersion": "1",
+  "options": ["widget.json"],
+  "files": ["index.html", "main.js", "styles.css"]
+}

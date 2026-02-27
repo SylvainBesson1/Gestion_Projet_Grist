@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Tâches</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <h1>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                    <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                    <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                    <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                </svg>
+                Kanban tâches
+            </h1>
+            <div class="group-selector">
+                <label for="groupBySelect">Grouper par :</label>
+                <select id="groupBySelect" onchange="changeGroupBy(this.value)">
+                    <option value="etat">État</option>
+                    <option value="priorite">Priorité</option>
+                </select>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Rechercher…" oninput="handleSearch()">
+            </div>
+            <button class="btn primary" onclick="openCreateModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nouvelle tâche
+            </button>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <div class="filter-dropdown" id="filterProjet">
+            <button class="filter-btn" onclick="toggleFilterMenu('filterProjet')"><span id="filterProjetLabel">Projet ▾</span></button>
+            <div class="filter-menu" id="filterProjetMenu"></div>
+        </div>
+        <div class="filter-dropdown" id="filterPriorite">
+            <button class="filter-btn" onclick="toggleFilterMenu('filterPriorite')"><span id="filterPrioriteLabel">Priorité ▾</span></button>
+            <div class="filter-menu" id="filterPrioriteMenu"></div>
+        </div>
+        <div class="filter-dropdown" id="filterEtat">
+            <button class="filter-btn" onclick="toggleFilterMenu('filterEtat')"><span id="filterEtatLabel">État ▾</span></button>
+            <div class="filter-menu" id="filterEtatMenu"></div>
+        </div>
+        <div class="active-filters" id="activeFilters"></div>
+    </div>
+
+    <div class="kanban-wrapper">
+        <div class="kanban-container" id="kanbanContainer"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="taskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle"><span>✏️</span> Nouvelle tâche</div>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label>Nom de la tâche <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="taskNom" placeholder="Nom de la tâche">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-control" id="taskDescription" placeholder="Description détaillée…"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Début</label>
+                        <input type="date" class="form-control" id="taskDebut">
+                    </div>
+                    <div class="form-group">
+                        <label>Deadline</label>
+                        <input type="date" class="form-control" id="taskDeadline">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Priorité</label>
+                    <div class="priority-selector" id="prioritySelector">
+                        <div class="priority-option p1" data-value="Élevée" onclick="selectPriority('Élevée')">
+                            <span class="priority-dot p1"></span>Élevée
+                        </div>
+                        <div class="priority-option p2" data-value="Moyenne" onclick="selectPriority('Moyenne')">
+                            <span class="priority-dot p2"></span>Moyenne
+                        </div>
+                        <div class="priority-option p3 active" data-value="Basse" onclick="selectPriority('Basse')">
+                            <span class="priority-dot p3"></span>Basse
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>État</label>
+                        <select class="form-control" id="taskEtat"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Projet/Mission <span class="required">*</span></label>
+                        <div class="multi-select" id="projetSelect">
+                            <div class="multi-select-trigger" onclick="toggleMultiSelect('projetSelect')">
+                                <div class="multi-select-values" id="projetValues">
+                                    <span style="color:var(--text-muted)">Sélectionner un projet…</span>
+                                </div>
+                                <span>▾</span>
+                            </div>
+                            <div class="multi-select-dropdown" id="projetDropdown"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <div class="type-selector" id="typeSelector"></div>
+                </div>
+                <div class="form-group">
+                    <label>Assigné à</label>
+                    <div class="multi-select" id="assigneSelect">
+                        <div class="multi-select-trigger" onclick="toggleMultiSelect('assigneSelect')">
+                            <div class="multi-select-values" id="assigneValues">
+                                <span style="color:var(--text-muted)">Sélectionner…</span>
+                            </div>
+                            <span>▾</span>
+                        </div>
+                        <div class="multi-select-dropdown" id="assigneDropdown"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">Annuler</button>
+                <button class="btn danger" onclick="deleteTask()" id="deleteTaskBtn" style="display:none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    Supprimer
+                </button>
+                <button class="btn primary" onclick="saveTask()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div id="loadingOverlay" style="position:fixed;inset:0;background:rgba(255,255,255,.8);display:none;align-items:center;justify-content:center;z-index:3000;">
+        <div style="border:4px solid var(--border);border-top:4px solid var(--primary);border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;"></div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
