@@ -12,107 +12,12 @@
       "description": "Sélectionnez la table contenant les tâches."
     },
     {
-      "name": "assigneeTable",
-      "label": "Table des accompagnateurs",
-      "type": "table",
-      "required": true,
-      "description": "Sélectionnez la table contenant les accompagnateurs."
-    },
-    {
-      "name": "projectTable",
-      "label": "Table des projets",
-      "type": "table",
-      "required": true,
-      "description": "Sélectionnez la table contenant les projets/missions."
-    },
-    {
       "name": "titleCol",
       "label": "Titre de la tâche",
       "type": "column",
       "tableFrom": "table",
       "required": true,
       "description": "Colonne contenant le titre de la tâche."
-    },
-    {
-      "name": "descCol",
-      "label": "Description de la tâche",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant la description de la tâche (optionnel)."
-    },
-    {
-      "name": "dateCol",
-      "label": "Date limite",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant la date limite de la tâche."
-    },
-    {
-      "name": "statusCol",
-      "label": "État de la tâche",
-      "type": "column",
-      "tableFrom": "table",
-      "required": true,
-      "description": "Colonne contenant l'état de la tâche (ex: À faire, En cours, Terminé)."
-    },
-    {
-      "name": "priorityCol",
-      "label": "Priorité de la tâche",
-      "type": "column",
-      "tableFrom": "table",
-      "required": true,
-      "description": "Colonne contenant la priorité de la tâche (ex: Élevée, Moyenne, Basse)."
-    },
-    {
-      "name": "assigneeCol",
-      "label": "Assigné à",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant les personnes assignées à la tâche."
-    },
-    {
-      "name": "projectCol",
-      "label": "Projet/Mission",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant le projet ou la mission associée à la tâche."
-    },
-    {
-      "name": "projectNameCol",
-      "label": "Nom du projet",
-      "type": "column",
-      "tableFrom": "projectTable",
-      "required": true,
-      "description": "Colonne contenant le nom du projet dans la table des projets."
-    },
-    {
-      "name": "assigneeNameCol",
-      "label": "Nom de l'accompagnateur",
-      "type": "column",
-      "tableFrom": "assigneeTable",
-      "required": true,
-      "description": "Colonne contenant le nom de l'accompagnateur dans la table des accompagnateurs."
-    },
-    {
-      "name": "startDateCol",
-      "label": "Date de début",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant la date de début de la tâche (optionnel)."
-    },
-    {
-      "name": "typeCol",
-      "label": "Type de tâche",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant le type de la tâche (optionnel)."
-    },
-    {
-      "name": "folderCol",
-      "label": "Dossier",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant le dossier de la tâche (optionnel)."
     }
   ]
 }
