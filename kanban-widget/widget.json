@@ -12,6 +12,20 @@
       "description": "Sélectionnez la table contenant les tâches."
     },
     {
+      "name": "assigneeTable",
+      "label": "Table des accompagnateurs",
+      "type": "table",
+      "required": true,
+      "description": "Sélectionnez la table contenant les accompagnateurs."
+    },
+    {
+      "name": "projectTable",
+      "label": "Table des projets",
+      "type": "table",
+      "required": true,
+      "description": "Sélectionnez la table contenant les projets/missions."
+    },
+    {
       "name": "titleCol",
       "label": "Titre de la tâche",
       "type": "column",
@@ -24,7 +38,7 @@
       "label": "Description de la tâche",
       "type": "column",
       "tableFrom": "table",
-      "description": "Colonne contenant la description de la tâche."
+      "description": "Colonne contenant la description de la tâche (optionnel)."
     },
     {
       "name": "dateCol",
@@ -39,14 +53,15 @@
       "type": "column",
       "tableFrom": "table",
       "required": true,
-      "description": "Colonne contenant l'état de la tâche."
+      "description": "Colonne contenant l'état de la tâche (ex: À faire, En cours, Terminé)."
     },
     {
       "name": "priorityCol",
       "label": "Priorité de la tâche",
       "type": "column",
       "tableFrom": "table",
-      "description": "Colonne contenant la priorité de la tâche."
+      "required": true,
+      "description": "Colonne contenant la priorité de la tâche (ex: Élevée, Moyenne, Basse)."
     },
     {
       "name": "assigneeCol",
@@ -63,74 +78,41 @@
       "description": "Colonne contenant le projet ou la mission associée à la tâche."
     },
     {
+      "name": "projectNameCol",
+      "label": "Nom du projet",
+      "type": "column",
+      "tableFrom": "projectTable",
+      "required": true,
+      "description": "Colonne contenant le nom du projet dans la table des projets."
+    },
+    {
+      "name": "assigneeNameCol",
+      "label": "Nom de l'accompagnateur",
+      "type": "column",
+      "tableFrom": "assigneeTable",
+      "required": true,
+      "description": "Colonne contenant le nom de l'accompagnateur dans la table des accompagnateurs."
+    },
+    {
+      "name": "startDateCol",
+      "label": "Date de début",
+      "type": "column",
+      "tableFrom": "table",
+      "description": "Colonne contenant la date de début de la tâche (optionnel)."
+    },
+    {
       "name": "typeCol",
       "label": "Type de tâche",
       "type": "column",
       "tableFrom": "table",
-      "description": "Colonne contenant le type de tâche."
+      "description": "Colonne contenant le type de la tâche (optionnel)."
     },
     {
-      "name": "notesCol",
-      "label": "Notes",
+      "name": "folderCol",
+      "label": "Dossier",
       "type": "column",
       "tableFrom": "table",
-      "description": "Colonne contenant les notes de la tâche."
-    },
-    {
-      "name": "createdByCol",
-      "label": "Créé par",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant la personne qui a créé la tâche."
-    },
-    {
-      "name": "createdAtCol",
-      "label": "Créé le",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant la date de création de la tâche."
-    },
-    {
-      "name": "updatedAtCol",
-      "label": "Mis à jour le",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant la date de dernière mise à jour de la tâche."
-    },
-    {
-      "name": "colorCol",
-      "label": "Couleur de la carte",
-      "type": "column",
-      "tableFrom": "table",
-      "description": "Colonne contenant la couleur de la carte."
-    },
-    {
-      "name": "columns",
-      "label": "Colonnes du Kanban",
-      "type": "text",
-      "description": "Configuration JSON des colonnes du Kanban (ex: [{id: 'À faire', libelle: 'À faire', couleur: '#f95c5e', btajout: true}])",
-      "defaultValue": "[{\"id\": \"🖐️ À faire\", \"libelle\": \"À faire\", \"couleur\": \"#f95c5e\", \"btajout\": true, \"isdone\": false, \"useconfetti\": false}, {\"id\": \"♻️ En cours\", \"libelle\": \"En cours\", \"couleur\": \"#417DC4\", \"btajout\": false, \"isdone\": false, \"useconfetti\": false}, {\"id\": \"✅ Fait\", \"libelle\": \"Fait\", \"couleur\": \"#27a658\", \"btajout\": false, \"isdone\": true, \"useconfetti\": true}, {\"id\": \"❌ Annulé\", \"libelle\": \"Annulé\", \"couleur\": \"#301717\", \"btajout\": false, \"isdone\": true, \"useconfetti\": false}]"
-    },
-    {
-      "name": "rotateCard",
-      "label": "Rotation des cartes",
-      "type": "boolean",
-      "description": "Activer ou désactiver la rotation des cartes.",
-      "defaultValue": true
-    },
-    {
-      "name": "compactCard",
-      "label": "Cartes compactes",
-      "type": "boolean",
-      "description": "Activer ou désactiver l'affichage compact des cartes.",
-      "defaultValue": false
-    },
-    {
-      "name": "readOnly",
-      "label": "Mode lecture seule",
-      "type": "boolean",
-      "description": "Activer ou désactiver le mode lecture seule.",
-      "defaultValue": false
+      "description": "Colonne contenant le dossier de la tâche (optionnel)."
     }
   ]
 }
