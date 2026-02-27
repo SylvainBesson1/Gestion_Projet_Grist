@@ -5,7 +5,7 @@ const PRIORITY_LABELS = { 'Élevée': 'Élevée', 'Moyenne': 'Moyenne', 'Basse':
 const PRIORITY_COLORS = { 'Élevée': '#ef4444', 'Moyenne': '#f59e0b', 'Basse': '#3b82f6' };
 const DEFAULT_ETAT_COLORS = ['#7c2d12', '#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'];
 
-let options = {};
+let options = null;
 let schema = null;
 let taches = [];
 let accompagnateurs = [];
@@ -142,14 +142,8 @@ function buildDynamicConfigs() {
 /* -------------------------------------------------
    CHARGEMENT / GESTION DE SCHEMA
 ------------------------------------------------- */
-async function loadSchema() {
-    try {
-        schema = await grist.docApi.getSchema();
-        buildDynamicConfigs();
-    } catch (e) {
-        console.warn('Schéma indisponible', e);
-    }
-}
+// Fonction pour charger le schéma
+
 
 /* -------------------------------------------------
    COLONNES KANBAN (group-by)
@@ -825,33 +819,46 @@ function getProjectNameFromId(id) {
     return p ? p[options.projectNameCol] : null;
 }
 
-async function loadAllData() {
-    document.getElementById('loadingOverlay').style.display = 'flex';
-
-    try {
-        const [t, a, act] = await Promise.all([
-            grist.docApi.fetchTable(options.table),
-            grist.docApi.fetchTable(options.assigneeTable),
-            grist.docApi.fetchTable(options.projectTable)
-        ]);
-
-        taches = convertGristToRecords(t).filter(r => !r.Supprime);
-        accompagnateurs = convertGristToRecords(a);
-        activites = convertGristToRecords(act);
-
-        await checkAndUpdateOverdueTasks();
-        updateProjetDropdown();
-        buildDynamicConfigs();
-        buildColumns();
-        updateFilterMenus();
-        render();
-    } catch (e) {
-        console.error('Erreur lors du chargement des données:', e);
-        showToast(`Erreur de chargement des données : ${e.message}`, 'error');
-    } finally {
-        document.getElementById('loadingOverlay').style.display = 'none';
+// Attendre que Grist soit prêt et que les options soient chargées
+grist.ready().then(() => {
+  grist.onOptions((newOptions) => {
+    options = newOptions;
+    console.log("Options reçues :", options); // Vérifiez que les options sont bien reçues
+    if (options.table) {
+      loadSchema().then(loadAllData); // Chargez les données une fois que les options sont disponibles
+    } else {
+      console.error("La table n'est pas définie dans les options.");
     }
+  });
+});
+
+// Fonction pour charger le schéma
+async function loadSchema() {
+  try {
+    schema = await grist.docApi.getSchema();
+    console.log("Schéma chargé :", schema);
+  } catch (e) {
+    console.error("Erreur lors du chargement du schéma :", e);
+  }
 }
+
+// Fonction pour charger les données
+async function loadAllData() {
+  if (!options || !options.table) {
+    console.error("Les options ou la table ne sont pas définies.");
+    return;
+  }
+
+  try {
+    const data = await grist.docApi.fetchTable(options.table);
+    taches = convertGristToRecords(data).filter(r => !r.Supprime);
+    console.log("Tâches chargées :", taches);
+    render(); // Affichez les données une fois qu'elles sont chargées
+  } catch (e) {
+    console.error("Erreur lors du chargement des données :", e);
+  }
+}
+
 
 async function checkAndUpdateOverdueTasks() {
     const now = new Date();
