@@ -8,6 +8,7 @@ const DEFAULT_ETAT_COLORS = ['#7c2d12', '#ef4444', '#3b82f6', '#f59e0b', '#10b98
 let options = null; // Initialisé à null pour éviter les erreurs
 let schema = null;
 let taches = [];
+let projets = [];
 let accompagnateurs = [];
 let activites = [];
 let columns = [];
@@ -887,38 +888,45 @@ function getProjectNameFromId(id) {
 }
 
 async function loadAllData() {
-  if (!options) {
-    console.error("Les options ne sont pas définies.");
-    return;
-  }
+  if (!options) return;
 
   document.getElementById('loadingOverlay').style.display = 'flex';
 
   try {
-    const [t, a, act] = await Promise.all([
-      grist.docApi.fetchTable(options.table),
-      grist.docApi.fetchTable(options.assigneeTable),
-      grist.docApi.fetchTable(options.projectTable)
-    ]);
+    // Charger la table des tâches
+    const tachesData = await grist.docApi.fetchTable(options.table);
+    taches = convertGristToRecords(tachesData).filter(r => !r.Supprime);
 
-    taches = convertGristToRecords(t).filter(r => !r.Supprime);
-    accompagnateurs = convertGristToRecords(a);
-    activites = convertGristToRecords(act);
+    // Charger la table des accompagnateurs (nom fourni par l'utilisateur)
+    const accompagnateursData = await grist.docApi.fetchTable(options.assigneeTable);
+    accompagnateurs = convertGristToRecords(accompagnateursData);
 
-    await checkAndUpdateOverdueTasks();
-    updateProjetDropdown();
+    // Charger la table des projets (nom fourni par l'utilisateur)
+    const projetsData = await grist.docApi.fetchTable(options.projectTable);
+    projets = convertGristToRecords(projetsData);
+
+    // Suite du traitement...
     buildDynamicConfigs();
     buildColumns();
     updateFilterMenus();
     render();
   } catch (e) {
     console.error('Erreur lors du chargement des données:', e);
-    showToast(`Erreur de chargement des données : ${e.message}`, 'error');
+    showToast(`Erreur de chargement : ${e.message}`, 'error');
   } finally {
     document.getElementById('loadingOverlay').style.display = 'none';
   }
 }
+// Exemple d'utilisation des colonnes personnalisées
+function getAssigneeName(assigneeId) {
+  const assignee = accompagnateurs.find(a => a.id === assigneeId);
+  return assignee ? assignee[options.assigneeNameCol] : "Inconnu";
+}
 
+function getProjectName(projectId) {
+  const projet = projets.find(p => p.id === projectId);
+  return projet ? projet[options.projectNameCol] : "Inconnu";
+}
 async function checkAndUpdateOverdueTasks() {
   if (!options?.dateCol || !options?.priorityCol) return;
 

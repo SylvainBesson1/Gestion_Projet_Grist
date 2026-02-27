@@ -1,7 +1,7 @@
 {
-  "name": "Kanban Tâches",
+  "name": "Kanban Tâches (Flexible)",
   "version": "1.0",
-  "description": "Un widget Kanban configurable pour Grist.",
+  "description": "Un widget Kanban flexible pour Grist. Spécifiez les noms des tables et colonnes.",
   "icon": "✨",
   "options": [
     {
@@ -18,6 +18,54 @@
       "tableFrom": "table",
       "required": true,
       "description": "Colonne contenant le titre de la tâche."
+    },
+    {
+      "name": "assigneeTable",
+      "label": "Nom de la table des accompagnateurs",
+      "type": "text",
+      "default": "Accompagnateurs",
+      "required": true,
+      "description": "Nom de la table contenant les accompagnateurs."
+    },
+    {
+      "name": "assigneeCol",
+      "label": "Colonne des IDs des accompagnateurs (dans la table des tâches)",
+      "type": "column",
+      "tableFrom": "table",
+      "required": true,
+      "description": "Colonne contenant les IDs des accompagnateurs (ex: [1, 2, 3])."
+    },
+    {
+      "name": "assigneeNameCol",
+      "label": "Nom de la colonne 'Nom' dans la table des accompagnateurs",
+      "type": "text",
+      "default": "Nom",
+      "required": true,
+      "description": "Nom de la colonne contenant le nom des accompagnateurs (ex: 'Nom')."
+    },
+    {
+      "name": "projectTable",
+      "label": "Nom de la table des projets",
+      "type": "text",
+      "default": "Projets",
+      "required": true,
+      "description": "Nom de la table contenant les projets."
+    },
+    {
+      "name": "projectCol",
+      "label": "Colonne de l'ID du projet (dans la table des tâches)",
+      "type": "column",
+      "tableFrom": "table",
+      "required": true,
+      "description": "Colonne contenant l'ID du projet."
+    },
+    {
+      "name": "projectNameCol",
+      "label": "Nom de la colonne 'Nom' dans la table des projets",
+      "type": "text",
+      "default": "Nom",
+      "required": true,
+      "description": "Nom de la colonne contenant le nom des projets (ex: 'Nom')."
     }
   ]
 }
