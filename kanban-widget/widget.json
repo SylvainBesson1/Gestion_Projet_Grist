@@ -1,8 +1,4 @@
 {
-  "name": "Kanban Tâches (Flexible)",
-  "version": "1.0",
-  "description": "Un widget Kanban flexible pour Grist. Configurez les colonnes et les comportements.",
-  "icon": "✨",
   "options": [
     {
       "name": "table",
@@ -59,7 +55,7 @@
       "description": "Colonne contenant le titre de la tâche."
     },
     {
-      "name": "projectRefCol",
+      "name": "projectCol",
       "label": "Colonne de référence pour le projet",
       "type": "column",
       "tableFrom": "table",
