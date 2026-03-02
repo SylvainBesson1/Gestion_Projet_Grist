@@ -1,15 +1,32 @@
 // ========== INITIALIZATION ==========
 let W;
 let T;
+let options = null;
+let schema = null;
+let taches = [];
+let columns = [];
+let selectedTaskId = null;
+let sortableInstances = [];
+let groupBy = 'etat';
+let searchQuery = '';
+let filters = { projet: null, priorite: null, etat: null, folder: null };
+let selectedPriority = 'Basse';
+let selectedType = null;
+let selectedAssignees = [];
+let selectedProjetId = null;
+let collapsedColumns = { '✅ Terminé': true, '❌ Sans suite': true };
+let gristReady = false;
+let ETAT_CONFIG = {};
+let TYPE_CONFIG = {};
 
 window.addEventListener('load', async (event) => {
-    // Create widget manager object
+    // Création de l'objet WidgetSDK
     W = new WidgetSDK();
 
-    // Load localization
+    // Chargement des traductions
     T = await W.loadTranslations(['widget.js']);
 
-    // Configure options
+    // Configuration des options
     W.configureOptions(
         [
             {
@@ -35,16 +52,18 @@ window.addEventListener('load', async (event) => {
             WidgetSDK.newItem('typeCol', null, 'Type', 'Colonne contenant le type de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
             WidgetSDK.newItem('dateCol', null, 'Date limite', 'Colonne contenant la date limite de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
             WidgetSDK.newItem('startDateCol', null, 'Date de début', 'Colonne contenant la date de début de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
-            WidgetSDK.newItem('descCol', null, 'Description', 'Colonne contenant la description de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),        ],
+            WidgetSDK.newItem('descCol', null, 'Description', 'Colonne contenant la description de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('folderCol', null, 'Dossier', 'Colonne contenant le dossier de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: false})
+        ],
         '#config-view',
         '#main-view',
         {onOptChange: optionsChanged, onOptLoad: optionsChanged}
     );
 
-    // Configure Columns meta data
+    // Initialisation des métadonnées des colonnes
     W.initMetaData();
 
-    // Initialize widget subscription to Grist
+    // Initialisation du widget avec Grist
     W.ready({
         requiredAccess: 'full',
         allowSelectBy: true,
@@ -57,37 +76,40 @@ window.addEventListener('load', async (event) => {
             {name: 'typeCol', title: 'Type', description: 'Type de la tâche', type: 'Choice', optional: true},
             {name: 'dateCol', title: 'Date limite', description: 'Date limite de la tâche', type: 'Date', optional: true},
             {name: 'startDateCol', title: 'Date de début', description: 'Date de début de la tâche', type: 'Date', optional: true},
-            {name: 'descCol', title: 'Description', description: 'Description de la tâche', type: 'Any', optional: true},        ],
+            {name: 'descCol', title: 'Description', description: 'Description de la tâche', type: 'Any', optional: true},
+            {name: 'folderCol', title: 'Dossier', description: 'Dossier de la tâche', type: 'Any', optional: true}
+        ],
         async onEditOptions() {
             await W.showConfig();
         }
     });
 
-    // Subscribe to Grist onRecords
+    // Souscription aux données de Grist
     W.onRecords(loadAllData, {expandRefs: false, keepEncoded: false, mapRef: true});
 
-    // When all configurations have been loaded, proceed to widget initialization
+    // Initialisation du widget
     W.isLoaded().then(async () => {
         W.initDone = true;
     });
 
-    // Trigger event when mapping is changed
+    // Écouteur pour les changements de mapping
     grist.on('message', async (e) => {
         if (e.mappingsChange) mappingChanged();
     });
 });
 
-// Function to handle option changes
+// Fonction pour gérer les changements d'options
 async function optionsChanged(opts) {
     await W.isMapped();
     loadAllData();
 }
 
-// Function to handle mapping changes
+// Fonction pour gérer les changements de mapping
 function mappingChanged() {
     buildDynamicConfigs();
     loadAllData();
 }
+
 
 /* -------------------------------------------------
    CONSTANTES & VARIABLES GLOBALES
@@ -95,47 +117,7 @@ function mappingChanged() {
 const PRIORITY_LABELS = { 'Élevée': 'Élevée', 'Moyenne': 'Moyenne', 'Basse': 'Basse' };
 const PRIORITY_COLORS = { 'Élevée': '#ef4444', 'Moyenne': '#f59e0b', 'Basse': '#3b82f6' };
 const DEFAULT_ETAT_COLORS = ['#7c2d12', '#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'];
-/* ----------------------------------------------
- OPTIONS SCHEMA
----------------------------------------------------- */
 
-const OPTIONS_SCHEMA = {
-  table: {
-    type: 'Table',
-    label: 'Table des tâches',
-    required: true
-  },
-  titleCol: { type: 'Column', table: 'table', label: 'Colonne Nom' },
-  descCol: { type: 'Column', table: 'table', label: 'Colonne Description' },
-  statusCol: { type: 'Column', table: 'table', label: 'Colonne État' },
-  priorityCol: { type: 'Column', table: 'table', label: 'Colonne Priorité' },
-  typeCol: { type: 'Column', table: 'table', label: 'Colonne Type' },
-  dateCol: { type: 'Column', table: 'table', label: 'Colonne Deadline' },
-  startDateCol: { type: 'Column', table: 'table', label: 'Colonne Début' },
-  projectCol: { type: 'Column', table: 'table', label: 'Colonne Projet' },
-  projectRefCol: { type: 'Column', table: 'table', label: 'Colonne Référence Projet' },
-  assigneeCol: { type: 'Column', table: 'table', label: 'Colonne Assignés' },
-  assigneeRefCol: { type: 'Column', table: 'table', label: 'Colonne Référence Assignés' },
-};
-grist.widgetOptions = OPTIONS_SCHEMA;
-
-let options = null;
-let schema = null;
-let taches = [];
-let columns = [];
-let selectedTaskId = null;
-let sortableInstances = [];
-let groupBy = 'etat';
-let searchQuery = '';
-let filters = { projet: null, priorite: null, etat: null};
-let selectedPriority = 'Basse';
-let selectedType = null;
-let selectedAssignees = [];
-let selectedProjetId = null;
-let collapsedColumns = { '✅ Terminé': true, '❌ Sans suite': true };
-let gristReady = false;
-let ETAT_CONFIG = {};
-let TYPE_CONFIG = {};
 
 /* -------------------------------------------------
    UTILITAIRES GÉNÉRAUX
@@ -337,42 +319,43 @@ function setFilter(k, v) {
 }
 
 function updateFilterMenus() {
-  // Récupérer les projets uniques depuis les colonnes de référence
-  const projets = [...new Set(taches.map(t => getProjectNameFromRef(t)))].filter(p => p);
-  projets.sort((a, b) => a.localeCompare(b));
+    if (!options) return;
 
-  document.getElementById('filterProjetMenu').innerHTML = `
-    <div class="filter-menu-header">Projets</div>
-    <div class="filter-option ${!filters.projet ? 'active' : ''}" onclick="setFilter('projet', null)">Tous les projets</div>
-    ${projets.map(p => `
-      <div class="filter-option ${filters.projet === p ? 'active' : ''}" onclick="setFilter('projet', '${p}')">
-        ${escapeHtml(p)}
-      </div>`).join('')}
-  `;
+    // Récupérer les projets uniques depuis les colonnes de référence
+    const projets = [...new Set(taches.map(t => getProjectNameFromRef(t)))].filter(p => p);
+    projets.sort((a, b) => a.localeCompare(b));
 
-  // Priorités
-  document.getElementById('filterPrioriteMenu').innerHTML = `
-    <div class="filter-menu-header">Priorité</div>
-    <div class="filter-option ${!filters.priorite ? 'active' : ''}" onclick="setFilter('priorite', null)">Toutes</div>
-    ${['Élevée', 'Moyenne', 'Basse'].map(p => `
-      <div class="filter-option ${filters.priorite === p ? 'active' : ''}" onclick="setFilter('priorite', '${p}')">
-        <span class="color-dot" style="background:${PRIORITY_COLORS[p]}"></span>
-        ${PRIORITY_LABELS[p]}
-      </div>`).join('')}
-  `;
+    document.getElementById('filterProjetMenu').innerHTML = `
+        <div class="filter-menu-header">Projets</div>
+        <div class="filter-option ${!filters.projet ? 'active' : ''}" onclick="setFilter('projet', null)">Tous les projets</div>
+        ${projets.map(p => `
+            <div class="filter-option ${filters.projet === p ? 'active' : ''}" onclick="setFilter('projet', '${p}')">
+                ${escapeHtml(p)}
+            </div>`).join('')}
+    `;
 
-  // États
-  const etatOpts = Object.values(ETAT_CONFIG);
-  document.getElementById('filterEtatMenu').innerHTML = `
-    <div class="filter-menu-header">État</div>
-    <div class="filter-option ${!filters.etat ? 'active' : ''}" onclick="setFilter('etat', null)">Tous les états</div>
-    ${etatOpts.map(cfg => `
-      <div class="filter-option ${filters.etat === cfg.label ? 'active' : ''}" onclick="setFilter('etat', '${cfg.label}')">
-        <span class="color-dot" style="background:${cfg.color}"></span>
-        ${cfg.label}
-      </div>`).join('')}
-  `;
+    // Priorités
+    document.getElementById('filterPrioriteMenu').innerHTML = `
+        <div class="filter-menu-header">Priorité</div>
+        <div class="filter-option ${!filters.priorite ? 'active' : ''}" onclick="setFilter('priorite', null)">Toutes</div>
+        ${['Élevée', 'Moyenne', 'Basse'].map(p => `
+            <div class="filter-option ${filters.priorite === p ? 'active' : ''}" onclick="setFilter('priorite', '${p}')">
+                <span class="color-dot" style="background:${PRIORITY_COLORS[p]}"></span>
+                ${PRIORITY_LABELS[p]}
+            </div>`).join('')}
+    `;
 
+    // États
+    const etatOpts = Object.values(ETAT_CONFIG);
+    document.getElementById('filterEtatMenu').innerHTML = `
+        <div class="filter-menu-header">État</div>
+        <div class="filter-option ${!filters.etat ? 'active' : ''}" onclick="setFilter('etat', null)">Tous les états</div>
+        ${etatOpts.map(cfg => `
+            <div class="filter-option ${filters.etat === cfg.label ? 'active' : ''}" onclick="setFilter('etat', '${cfg.label}')">
+                <span class="color-dot" style="background:${cfg.color}"></span>
+                ${cfg.label}
+            </div>`).join('')}
+    `;
 }
 
 function updateFilterUI() {
@@ -522,77 +505,77 @@ function getAssigneeNameFromRef(assigneeRef) {
 }
 
 
-function renderTaskCard(task) {
-  if (!options) return '';
+unction renderTaskCard(task) {
+    if (!options) return '';
 
-  const priority = getTaskPriority(task);
-  const deadline = gristToDate(task[options.dateCol]);
-  const selected = task.id === selectedTaskId ? ' selected' : '';
-  const assignees = getAssigneesArray(task);
-  const projetName = getProjectNameFromRef(task);
-  const isDeadlineOverdue = deadline && new Date() > deadline;
+    const priority = getTaskPriority(task);
+    const deadline = gristToDate(task[options.dateCol]);
+    const selected = task.id === selectedTaskId ? ' selected' : '';
+    const assignees = getAssigneesArray(task);
+    const projetName = getProjectNameFromRef(task);
+    const isDeadlineOverdue = deadline && new Date() > deadline;
 
-  let borderColor = '#ccc';
-  if (groupBy === 'etat') {
-    const cfg = ETAT_CONFIG[task[options.statusCol]];
-    if (cfg) borderColor = cfg.color;
-  } else {
-    borderColor = PRIORITY_COLORS[priority];
-  }
-
-  let badges = '';
-
-  if (groupBy !== 'priorite') {
-    badges += `<span class="badge priority ${priority === 'Élevée' ? 'p1' : priority === 'Moyenne' ? 'p2' : 'p3'}">${priority}</span>`;
-  }
-
-  if (projetName) {
-    const short = projetName.length > 10 ? projetName.substring(0, 10) + '…' : projetName;
-    badges += `<span class="badge project" title="${escapeHtml(projetName)}">${escapeHtml(short)}</span>`;
-  }
-
-  if (groupBy !== 'etat' && task[options.statusCol] && ETAT_CONFIG[task[options.statusCol]]) {
-    const cfg = ETAT_CONFIG[task[options.statusCol]];
-    badges += `<span class="badge etat" style="background-color:${cfg.color}">${escapeHtml(task[options.statusCol])}</span>`;
-  }
-
-  if (task[options.typeCol]) {
-    badges += `<span class="badge type">${escapeHtml(task[options.typeCol])}</span>`;
-  }
-
-  let assigneeHtml = '';
-  if (assignees.length) {
-    assigneeHtml = '<div class="task-card-assignees">';
-    assignees.slice(0, 3).forEach(id => {
-      const assigneeRef = task[options.assigneeRefCol];
-      if (Array.isArray(assigneeRef)) {
-        const assignee = assigneeRef.find(ref => ref.id === id);
-        if (assignee) {
-          const name = assignee[options.assigneeNameCol];
-          assigneeHtml += `<div class="assignee-avatar" title="${escapeHtml(name)}">${getInitials(name)}</div>`;
-        }
-      }
-    });
-    if (assignees.length > 3) {
-      assigneeHtml += `<div class="assignee-avatar" title="${assignees.length - 3} autres">+${assignees.length - 3}</div>`;
+    let borderColor = '#ccc';
+    if (groupBy === 'etat') {
+        const cfg = ETAT_CONFIG[task[options.statusCol]];
+        if (cfg) borderColor = cfg.color;
+    } else {
+        borderColor = PRIORITY_COLORS[priority];
     }
-    assigneeHtml += '</div>';
-  }
 
-  const deadlineDateText = formatDateShort(deadline);
-  const deadlineClass = isDeadlineOverdue ? 'overdue' : '';
+    let badges = '';
 
-  return `
-  <div class="task-card${selected}" style="border-left-color:${borderColor}" data-id="${task.id}">
-    <div class="task-card-title">${escapeHtml(task[options.titleCol])}</div>
-    <div class="task-card-badges">${badges}</div>
-    <div class="task-card-meta">
-      <span class="task-card-date ${deadlineClass}" title="${deadline ? deadline.toLocaleDateString('fr-FR') : ''}">
-        📅 ${deadlineDateText}
-      </span>
-      ${assigneeHtml}
-    </div>
-  </div>`;
+    if (groupBy !== 'priorite') {
+        badges += `<span class="badge priority ${priority === 'Élevée' ? 'p1' : priority === 'Moyenne' ? 'p2' : 'p3'}">${priority}</span>`;
+    }
+
+    if (projetName) {
+        const short = projetName.length > 10 ? projetName.substring(0, 10) + '…' : projetName;
+        badges += `<span class="badge project" title="${escapeHtml(projetName)}">${escapeHtml(short)}</span>`;
+    }
+
+    if (groupBy !== 'etat' && task[options.statusCol] && ETAT_CONFIG[task[options.statusCol]]) {
+        const cfg = ETAT_CONFIG[task[options.statusCol]];
+        badges += `<span class="badge etat" style="background-color:${cfg.color}">${escapeHtml(task[options.statusCol])}</span>`;
+    }
+
+    if (task[options.typeCol]) {
+        badges += `<span class="badge type">${escapeHtml(task[options.typeCol])}</span>`;
+    }
+
+    let assigneeHtml = '';
+    if (assignees.length) {
+        assigneeHtml = '<div class="task-card-assignees">';
+        assignees.slice(0, 3).forEach(id => {
+            const assigneeRef = task[options.assigneeRefCol];
+            if (Array.isArray(assigneeRef)) {
+                const assignee = assigneeRef.find(ref => ref.id === id);
+                if (assignee) {
+                    const name = assignee[options.assigneeNameCol];
+                    assigneeHtml += `<div class="assignee-avatar" title="${escapeHtml(name)}">${getInitials(name)}</div>`;
+                }
+            }
+        });
+        if (assignees.length > 3) {
+            assigneeHtml += `<div class="assignee-avatar" title="${assignees.length - 3} autres">+${assignees.length - 3}</div>`;
+        }
+        assigneeHtml += '</div>';
+    }
+
+    const deadlineDateText = formatDateShort(deadline);
+    const deadlineClass = isDeadlineOverdue ? 'overdue' : '';
+
+    return `
+    <div class="task-card${selected}" style="border-left-color:${borderColor}" data-id="${task.id}">
+        <div class="task-card-title">${escapeHtml(task[options.titleCol])}</div>
+        <div class="task-card-badges">${badges}</div>
+        <div class="task-card-meta">
+            <span class="task-card-date ${deadlineClass}" title="${deadline ? deadline.toLocaleDateString('fr-FR') : ''}">
+                📅 ${deadlineDateText}
+            </span>
+            ${assigneeHtml}
+        </div>
+    </div>`;
 }
 
 /* -------------------------------------------------
@@ -991,8 +974,10 @@ async function loadAllData(recs) {
     document.getElementById('loadingOverlay').style.display = 'flex';
 
     try {
+        // Filtrer les tâches supprimées
         taches = recs.filter(r => !r.Supprime);
 
+        // Construire les configurations dynamiques
         buildDynamicConfigs();
         buildColumns();
         updateFilterMenus();
@@ -1004,7 +989,6 @@ async function loadAllData(recs) {
         document.getElementById('loadingOverlay').style.display = 'none';
     }
 }
-
 
 async function checkAndUpdateOverdueTasks() {
   if (!options?.dateCol || !options?.priorityCol) return;
@@ -1036,9 +1020,16 @@ async function checkAndUpdateOverdueTasks() {
 ------------------------------------------------- */
 async function init() {
     try {
+        // Attendre que WidgetSDK soit prêt
         await W.isLoaded();
+
+        // Charger les filtres
         loadFilters();
+
+        // Souscrire aux changements de données
         grist.onRecords(async () => await loadAllData());
+
+        // Écouteur pour les changements de sélection
         grist.onRecord(r => {
             if (r?.id && r.id !== selectedTaskId) {
                 selectedTaskId = r.id;
@@ -1054,6 +1045,7 @@ async function init() {
         throw new Error('Grist est requis pour exécuter cette application.');
     }
 }
+
 
 
 // Écouteurs globaux
