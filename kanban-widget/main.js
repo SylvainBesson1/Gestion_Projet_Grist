@@ -8,9 +8,6 @@ const DEFAULT_ETAT_COLORS = ['#7c2d12', '#ef4444', '#3b82f6', '#f59e0b', '#10b98
 let options = null; // Initialisé à null pour éviter les erreurs
 let schema = null;
 let taches = [];
-let projets = [];
-let accompagnateurs = [];
-let activites = [];
 let columns = [];
 let selectedTaskId = null;
 let sortableInstances = [];
@@ -226,17 +223,16 @@ function setFilter(k, v) {
 }
 
 function updateFilterMenus() {
-  if (!options?.projectTable || !options?.projectNameCol) return;
+  // Récupérer les projets uniques depuis les colonnes de référence
+  const projets = [...new Set(taches.map(t => getProjectNameFromRef(t)))].filter(p => p);
+  projets.sort((a, b) => a.localeCompare(b));
 
-  // Projets
-  const projets = activites.filter(a => a[options.projectNameCol] && a.id);
-  projets.sort((a, b) => a[options.projectNameCol].localeCompare(b[options.projectNameCol]));
   document.getElementById('filterProjetMenu').innerHTML = `
     <div class="filter-menu-header">Projets</div>
     <div class="filter-option ${!filters.projet ? 'active' : ''}" onclick="setFilter('projet', null)">Tous les projets</div>
     ${projets.map(p => `
-      <div class="filter-option ${filters.projet == p.id ? 'active' : ''}" onclick="setFilter('projet', ${p.id})">
-        ${escapeHtml(p[options.projectNameCol])}
+      <div class="filter-option ${filters.projet === p ? 'active' : ''}" onclick="setFilter('projet', '${p}')">
+        ${escapeHtml(p)}
       </div>`).join('')}
   `;
 
@@ -430,13 +426,31 @@ function render() {
 function renderTaskCard(task) {
   if (!options) return '';
 
+  function getProjectNameFromRef(task) {
+    if (!task || !options.projectRefCol) return null;
+    const ref = task[options.projectRefCol];
+    if (!ref) return null;
+    // Supposons que la référence est un objet avec un champ "Nom"
+    return ref[options.projectNameCol] || "Inconnu";
+  }
+
+  function getAssigneeNameFromRef(assigneeRef) {
+    if (!assigneeRef || !options.assigneeNameCol) return "Inconnu";
+    // Supposons que la référence est un objet avec un champ "Nom"
+    return assigneeRef[options.assigneeNameCol] || "Inconnu";
+  }
+
+
   const priority = getTaskPriority(task);
   const deadline = gristToDate(task[options.dateCol]);
   const selected = task.id === selectedTaskId ? ' selected' : '';
+  const projetName = getProjectNameFromRef(task);
+   const assigneeNames = task[options.assigneeRefCol]?.map(ref => getAssigneeNameFromRef(ref)) || [];
   const assignees = getAssigneesArray(task);
   const isDeadlineOverdue = deadline && new Date() > deadline;
 
-  let borderColor = '#ccc';
+  
+    let borderColor = '#ccc';
   if (groupBy === 'etat') {
     const cfg = ETAT_CONFIG[task[options.statusCol]];
     if (cfg) borderColor = cfg.color;
@@ -704,11 +718,11 @@ function filterProjets() {
   document.getElementById('projetOptions').innerHTML = optionsHTML;
 }
 
-function selectProjet(id, nom) {
-  selectedProjetId = id;
+function selectProjet(nom, nomAffichage) {
+  selectedProjetId = nom;
   const projetValues = document.getElementById('projetValues');
   if (projetValues) {
-    projetValues.innerHTML = `<span class="filter-chip">${escapeHtml(nom)}</span>`;
+    projetValues.innerHTML = `<span class="filter-chip">${escapeHtml(nomAffichage)}</span>`;
   }
   const projetDropdown = document.getElementById('projetDropdown');
   if (projetDropdown) {
@@ -721,15 +735,16 @@ function updateProjetDropdown() {
   const projetDropdown = document.getElementById('projetDropdown');
   if (!projetDropdown) return;
 
-  const projets = activites.filter(a => a[options.projectNameCol] && a.id);
-  projets.sort((a, b) => a[options.projectNameCol].localeCompare(b[options.projectNameCol]));
+  // Récupérer les projets uniques depuis les colonnes de référence
+  const projets = [...new Set(taches.map(t => getProjectNameFromRef(t)))].filter(p => p);
+  projets.sort((a, b) => a.localeCompare(b));
 
   const optionsHTML = projets.map(p => {
-    const isSelected = selectedProjetId === p.id;
+    const isSelected = selectedProjetId === p;
     return `
       <div class="multi-select-option ${isSelected ? 'selected' : ''}"
-          onclick="selectProjet(${p.id}, '${escapeHtml(p[options.projectNameCol])}')">
-          ${escapeHtml(p[options.projectNameCol])}
+          onclick="selectProjet('${p}', '${escapeHtml(p)}')">
+          ${escapeHtml(p)}
       </div>
     `;
   }).join('');
@@ -741,6 +756,7 @@ function updateProjetDropdown() {
     <div id="projetOptions">${optionsHTML}</div>
   `;
 }
+
 
 /* -------------------------------------------------
    ASSIGNÉS – multi-select avec recherche
@@ -881,11 +897,6 @@ async function deleteTask() {
 /* -------------------------------------------------
    CHARGEMENT COMPLET (tables + UI)
 ------------------------------------------------- */
-function getProjectNameFromId(id) {
-  if (!options?.projectNameCol) return null;
-  const p = activites.find(r => r.id === id);
-  return p ? p[options.projectNameCol] : null;
-}
 
 async function loadAllData() {
   if (!options) return;
@@ -897,15 +908,6 @@ async function loadAllData() {
     const tachesData = await grist.docApi.fetchTable(options.table);
     taches = convertGristToRecords(tachesData).filter(r => !r.Supprime);
 
-    // Charger la table des accompagnateurs (nom fourni par l'utilisateur)
-    const accompagnateursData = await grist.docApi.fetchTable(options.assigneeTable);
-    accompagnateurs = convertGristToRecords(accompagnateursData);
-
-    // Charger la table des projets (nom fourni par l'utilisateur)
-    const projetsData = await grist.docApi.fetchTable(options.projectTable);
-    projets = convertGristToRecords(projetsData);
-
-    // Suite du traitement...
     buildDynamicConfigs();
     buildColumns();
     updateFilterMenus();
@@ -917,16 +919,7 @@ async function loadAllData() {
     document.getElementById('loadingOverlay').style.display = 'none';
   }
 }
-// Exemple d'utilisation des colonnes personnalisées
-function getAssigneeName(assigneeId) {
-  const assignee = accompagnateurs.find(a => a.id === assigneeId);
-  return assignee ? assignee[options.assigneeNameCol] : "Inconnu";
-}
 
-function getProjectName(projectId) {
-  const projet = projets.find(p => p.id === projectId);
-  return projet ? projet[options.projectNameCol] : "Inconnu";
-}
 async function checkAndUpdateOverdueTasks() {
   if (!options?.dateCol || !options?.priorityCol) return;
 
