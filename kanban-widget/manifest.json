@@ -1,9 +1,8 @@
 {
-  "name": "Kanban Tâches",
-  "id": "kanban-taches",
+  "name": "Kanban Tâches Grist",
+  "id": "kanban-taches-grist",
   "version": "1.0.0",
-  "description": "Kanban pour tâches Grist",
-  "gristVersion": "1.0.0",
+  "description": "Widget Kanban pour gestion de tâches",
   "components": [
     {
       "kind": "widget",
@@ -32,13 +31,13 @@
         },
         {
           "name": "projectCol",
-          "label": "Projet (Ref)",
+          "label": "Projet",
           "type": "column",
           "tableFrom": "table"
         },
         {
           "name": "assigneeCol",
-          "label": "Assignés (RefList)",
+          "label": "Assignés",
           "type": "column",
           "tableFrom": "table"
         }
