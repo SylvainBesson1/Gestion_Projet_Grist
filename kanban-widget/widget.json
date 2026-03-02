@@ -137,41 +137,6 @@
       "tableFrom": "table",
       "required": false,
       "description": "Colonne contenant le dossier de la tâche (optionnel)."
-    },
-    {
-      "name": "rotation",
-      "label": "Incliner les cartes",
-      "type": "boolean",
-      "default": true,
-      "description": "Si coché, les cartes sont inclinées aléatoirement."
-    },
-    {
-      "name": "compact",
-      "label": "Mode compact",
-      "type": "boolean",
-      "default": false,
-      "description": "Si coché, utilise un rendu compact."
-    },
-    {
-      "name": "readonly",
-      "label": "Lecture seule",
-      "type": "boolean",
-      "default": false,
-      "description": "Si coché, le Kanban est en lecture seule."
-    },
-    {
-      "name": "hideedit",
-      "label": "Masquer le formulaire d'édition",
-      "type": "boolean",
-      "default": false,
-      "description": "Si coché, masque le formulaire d'édition lors du clic sur une carte."
-    },
-    {
-      "name": "gristeditcard",
-      "label": "Carte Grist",
-      "type": "boolean",
-      "default": false,
-      "description": "Si coché, ouvre la carte Grist en double-cliquant."
     }
   ]
 }
