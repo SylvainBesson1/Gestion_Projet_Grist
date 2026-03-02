@@ -5,7 +5,7 @@ const PRIORITY_LABELS = { 'Élevée': 'Élevée', 'Moyenne': 'Moyenne', 'Basse':
 const PRIORITY_COLORS = { 'Élevée': '#ef4444', 'Moyenne': '#f59e0b', 'Basse': '#3b82f6' };
 const DEFAULT_ETAT_COLORS = ['#7c2d12', '#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'];
 
-let options = null; // Initialisé à null pour éviter les erreurs
+let options = null;
 let schema = null;
 let taches = [];
 let columns = [];
@@ -50,7 +50,7 @@ function formatDateInput(d) {
 }
 
 function getTaskPriority(t) {
-  return t[options?.priorityCol] || 'Basse'; // Utilisation de l'opérateur optionnel pour éviter les erreurs
+  return t[options?.priorityCol] || 'Basse';
 }
 
 function getAssigneesArray(t) {
@@ -284,10 +284,9 @@ function updateFilterUI() {
   if (etatBtn) etatBtn.className = 'filter-btn' + (filters.etat ? ' active' : '');
   if (folderBtn) folderBtn.className = 'filter-btn' + (filters.folder ? ' active' : '');
 
-  const proj = activites.find(a => a.id == filters.projet);
-  if (projBtn && options?.projectNameCol) {
+  if (projBtn) {
     document.getElementById('filterProjetLabel').textContent =
-      filters.projet ? `Projet: ${proj ? escapeHtml(proj[options.projectNameCol]) : 'Inconnu'}` : 'Projet ▾';
+      filters.projet ? `Projet: ${escapeHtml(filters.projet)}` : 'Projet ▾';
   }
 
   if (prioBtn) {
@@ -306,15 +305,7 @@ function updateFilterUI() {
   }
 
   const chips = [];
-  if (filters.projet && options?.projectNameCol) {
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
-    const proj = activites.find(a => a.id == filters.projet);
-    const col = proj?.couleur || colors[activites.indexOf(proj) % colors.length];
-    chips.push(`<span class="filter-chip" style="border-left:3px solid ${col}" title="${proj ? escapeHtml(proj[options.projectNameCol]) : ''}">
-      ${proj ? escapeHtml(proj[options.projectNameCol].length > 15 ? proj[options.projectNameCol].substring(0, 15) + '…' : proj[options.projectNameCol]) : 'Inconnu'}
-      <button onclick="setFilter('projet', null)">×</button></span>`);
-  }
-
+  if (filters.projet) chips.push(`<span class="filter-chip">${escapeHtml(filters.projet)} <button onclick="setFilter('projet', null)">×</button></span>`);
   if (filters.priorite) chips.push(`<span class="filter-chip">${PRIORITY_LABELS[filters.priorite]} <button onclick="setFilter('priorite', null)">×</button></span>`);
   if (filters.etat) chips.push(`<span class="filter-chip">${filters.etat} <button onclick="setFilter('etat', null)">×</button></span>`);
   if (filters.folder) chips.push(`<span class="filter-chip">${escapeHtml(filters.folder)} <button onclick="setFilter('folder', null)">×</button></span>`);
@@ -338,7 +329,7 @@ function getFilteredTasks() {
     // Filtre par dossier
     if (filters.folder && task[options.folderCol] !== filters.folder) return false;
     // Filtre par projet
-    if (filters.projet && task[options.projectCol] !== filters.projet) return false;
+    if (filters.projet && getProjectNameFromRef(task) !== filters.projet) return false;
     // Filtre par priorité
     if (filters.priorite && getTaskPriority(task) !== filters.priorite) return false;
     // Filtre par état
@@ -423,34 +414,32 @@ function render() {
   });
 }
 
+function getProjectNameFromRef(task) {
+  if (!task || !options.projectRefCol) return null;
+  const ref = task[options.projectRefCol];
+  if (!ref) return null;
+  return ref[options.projectNameCol] || "Inconnu";
+}
+
+function getAssigneeNameFromRef(assigneeRef) {
+  if (!assigneeRef || !options.assigneeNameCol) return "Inconnu";
+  if (typeof assigneeRef === 'object' && assigneeRef[options.assigneeNameCol]) {
+    return assigneeRef[options.assigneeNameCol];
+  }
+  return "Inconnu";
+}
+
 function renderTaskCard(task) {
   if (!options) return '';
-
-  function getProjectNameFromRef(task) {
-    if (!task || !options.projectRefCol) return null;
-    const ref = task[options.projectRefCol];
-    if (!ref) return null;
-    // Supposons que la référence est un objet avec un champ "Nom"
-    return ref[options.projectNameCol] || "Inconnu";
-  }
-
-  function getAssigneeNameFromRef(assigneeRef) {
-    if (!assigneeRef || !options.assigneeNameCol) return "Inconnu";
-    // Supposons que la référence est un objet avec un champ "Nom"
-    return assigneeRef[options.assigneeNameCol] || "Inconnu";
-  }
-
 
   const priority = getTaskPriority(task);
   const deadline = gristToDate(task[options.dateCol]);
   const selected = task.id === selectedTaskId ? ' selected' : '';
-  const projetName = getProjectNameFromRef(task);
-   const assigneeNames = task[options.assigneeRefCol]?.map(ref => getAssigneeNameFromRef(ref)) || [];
   const assignees = getAssigneesArray(task);
+  const projetName = getProjectNameFromRef(task);
   const isDeadlineOverdue = deadline && new Date() > deadline;
 
-  
-    let borderColor = '#ccc';
+  let borderColor = '#ccc';
   if (groupBy === 'etat') {
     const cfg = ETAT_CONFIG[task[options.statusCol]];
     if (cfg) borderColor = cfg.color;
@@ -460,20 +449,15 @@ function renderTaskCard(task) {
 
   let badges = '';
 
-  // Afficher le badge de priorité uniquement si on ne groupe pas par priorité
   if (groupBy !== 'priorite') {
     badges += `<span class="badge priority ${priority === 'Élevée' ? 'p1' : priority === 'Moyenne' ? 'p2' : 'p3'}">${priority}</span>`;
   }
 
-  if (task[options.projectCol]) {
-    const projName = getProjectNameFromId(task[options.projectCol]);
-    if (projName) {
-      const short = projName.length > 10 ? projName.substring(0, 10) + '…' : projName;
-      badges += `<span class="badge project" title="${escapeHtml(projName)}">${escapeHtml(short)}</span>`;
-    }
+  if (projetName) {
+    const short = projetName.length > 10 ? projetName.substring(0, 10) + '…' : projetName;
+    badges += `<span class="badge project" title="${escapeHtml(projetName)}">${escapeHtml(short)}</span>`;
   }
 
-  // Afficher le badge d'état uniquement si on ne groupe pas par état
   if (groupBy !== 'etat' && task[options.statusCol] && ETAT_CONFIG[task[options.statusCol]]) {
     const cfg = ETAT_CONFIG[task[options.statusCol]];
     badges += `<span class="badge etat" style="background-color:${cfg.color}">${escapeHtml(task[options.statusCol])}</span>`;
@@ -487,9 +471,13 @@ function renderTaskCard(task) {
   if (assignees.length) {
     assigneeHtml = '<div class="task-card-assignees">';
     assignees.slice(0, 3).forEach(id => {
-      const mem = accompagnateurs.find(m => m.id === id);
-      if (mem) {
-        assigneeHtml += `<div class="assignee-avatar" title="${escapeHtml(mem[options.assigneeNameCol])}">${getInitials(mem[options.assigneeNameCol])}</div>`;
+      const assigneeRef = task[options.assigneeRefCol];
+      if (Array.isArray(assigneeRef)) {
+        const assignee = assigneeRef.find(ref => ref.id === id);
+        if (assignee) {
+          const name = assignee[options.assigneeNameCol];
+          assigneeHtml += `<div class="assignee-avatar" title="${escapeHtml(name)}">${getInitials(name)}</div>`;
+        }
       }
     });
     if (assignees.length > 3) {
@@ -616,13 +604,10 @@ function openEditModal(taskId) {
   document.getElementById('taskDescription').value = task[options.descCol] || '';
 
   // Mise à jour de l'affichage du projet sélectionné
-  selectedProjetId = task[options.projectCol];
+  selectedProjetId = getProjectNameFromRef(task);
   const projetValues = document.getElementById('projetValues');
   if (projetValues) {
-    const projet = activites.find(a => a.id === task[options.projectCol]);
-    if (projet) {
-      projetValues.innerHTML = `<span class="filter-chip">${escapeHtml(projet[options.projectNameCol])}</span>`;
-    }
+    projetValues.innerHTML = `<span class="filter-chip">${escapeHtml(selectedProjetId)}</span>`;
   }
 
   const debut = gristToDate(task[options.startDateCol]);
@@ -702,15 +687,15 @@ function toggleMultiSelect(id) {
 
 function filterProjets() {
   const searchTerm = document.getElementById('searchProjet').value.toLowerCase();
-  const projets = activites.filter(a => a[options.projectNameCol] && a.id);
-  const filteredProjets = projets.filter(p => p[options.projectNameCol].toLowerCase().includes(searchTerm));
+  const projets = [...new Set(taches.map(t => getProjectNameFromRef(t)))].filter(p => p);
+  const filteredProjets = projets.filter(p => p.toLowerCase().includes(searchTerm));
 
   const optionsHTML = filteredProjets.map(p => {
-    const isSelected = selectedProjetId === p.id;
+    const isSelected = selectedProjetId === p;
     return `
       <div class="multi-select-option ${isSelected ? 'selected' : ''}"
-          onclick="selectProjet(${p.id}, '${escapeHtml(p[options.projectNameCol])}')">
-          ${escapeHtml(p[options.projectNameCol])}
+          onclick="selectProjet('${p}', '${escapeHtml(p)}')">
+          ${escapeHtml(p)}
       </div>
     `;
   }).join('');
@@ -735,7 +720,6 @@ function updateProjetDropdown() {
   const projetDropdown = document.getElementById('projetDropdown');
   if (!projetDropdown) return;
 
-  // Récupérer les projets uniques depuis les colonnes de référence
   const projets = [...new Set(taches.map(t => getProjectNameFromRef(t)))].filter(p => p);
   projets.sort((a, b) => a.localeCompare(b));
 
@@ -757,21 +741,25 @@ function updateProjetDropdown() {
   `;
 }
 
-
 /* -------------------------------------------------
    ASSIGNÉS – multi-select avec recherche
 ------------------------------------------------- */
 function filterAssignes() {
   const searchTerm = document.getElementById('searchAssigne').value.toLowerCase();
-  const filteredAssignes = accompagnateurs.filter(a => a[options.assigneeNameCol].toLowerCase().includes(searchTerm));
+  const assignees = [...new Set(taches.flatMap(t => t[options.assigneeRefCol] || []))].filter(a => a);
+  const filteredAssignes = assignees.filter(a => getAssigneeNameFromRef(a).toLowerCase().includes(searchTerm));
 
-  const optionsHTML = filteredAssignes.map(m => `
-    <div class="multi-select-option ${selectedAssignees.includes(m.id) ? 'selected' : ''}"
-         onclick="toggleAssignee(${m.id})">
-      <input type="checkbox" ${selectedAssignees.includes(m.id) ? 'checked' : ''}>
-      ${escapeHtml(m[options.assigneeNameCol])}
-    </div>
-  `).join('');
+  const optionsHTML = filteredAssignes.map(a => {
+    const name = getAssigneeNameFromRef(a);
+    const isSelected = selectedAssignees.includes(a.id);
+    return `
+      <div class="multi-select-option ${isSelected ? 'selected' : ''}"
+           onclick="toggleAssignee(${a.id})">
+        <input type="checkbox" ${isSelected ? 'checked' : ''}>
+        ${escapeHtml(name)}
+      </div>
+    `;
+  }).join('');
 
   document.getElementById('assigneOptions').innerHTML = optionsHTML;
 }
@@ -794,8 +782,9 @@ function updateAssigneeDisplay() {
     assigneValues.innerHTML = '<span style="color:var(--text-muted)">Sélectionner…</span>';
   } else {
     assigneValues.innerHTML = selectedAssignees.map(id => {
-      const mem = accompagnateurs.find(m => m.id === id);
-      return mem ? `<span class="filter-chip">${escapeHtml(mem[options.assigneeNameCol])}</span>` : '';
+      const assigneeRef = taches.flatMap(t => t[options.assigneeRefCol] || []).find(a => a.id === id);
+      const name = assigneeRef ? getAssigneeNameFromRef(assigneeRef) : "Inconnu";
+      return `<span class="filter-chip">${escapeHtml(name)}</span>`;
     }).join('');
   }
 }
@@ -804,13 +793,19 @@ function updateAssigneeDropdown() {
   const assigneDropdown = document.getElementById('assigneDropdown');
   if (!assigneDropdown) return;
 
-  const optionsHTML = accompagnateurs.map(m => `
-    <div class="multi-select-option ${selectedAssignees.includes(m.id) ? 'selected' : ''}"
-         onclick="toggleAssignee(${m.id})">
-      <input type="checkbox" ${selectedAssignees.includes(m.id) ? 'checked' : ''}>
-      ${escapeHtml(m[options.assigneeNameCol])}
-    </div>
-  `).join('');
+  const assignees = [...new Set(taches.flatMap(t => t[options.assigneeRefCol] || []))].filter(a => a);
+
+  const optionsHTML = assignees.map(a => {
+    const name = getAssigneeNameFromRef(a);
+    const isSelected = selectedAssignees.includes(a.id);
+    return `
+      <div class="multi-select-option ${isSelected ? 'selected' : ''}"
+           onclick="toggleAssignee(${a.id})">
+        <input type="checkbox" ${isSelected ? 'checked' : ''}>
+        ${escapeHtml(name)}
+      </div>
+    `;
+  }).join('');
 
   assigneDropdown.innerHTML = `
     <div class="search-container">
@@ -897,7 +892,6 @@ async function deleteTask() {
 /* -------------------------------------------------
    CHARGEMENT COMPLET (tables + UI)
 ------------------------------------------------- */
-
 async function loadAllData() {
   if (!options) return;
 

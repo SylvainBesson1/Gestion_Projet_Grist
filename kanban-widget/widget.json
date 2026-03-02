@@ -50,6 +50,62 @@
       "default": "Nom",
       "required": true,
       "description": "Nom de la colonne contenant le nom des accompagnateurs dans la référence (ex: 'Nom')."
+    },
+    {
+      "name": "statusCol",
+      "label": "Colonne de l'état de la tâche",
+      "type": "column",
+      "tableFrom": "table",
+      "required": true,
+      "description": "Colonne contenant l'état de la tâche."
+    },
+    {
+      "name": "priorityCol",
+      "label": "Colonne de la priorité de la tâche",
+      "type": "column",
+      "tableFrom": "table",
+      "required": true,
+      "description": "Colonne contenant la priorité de la tâche."
+    },
+    {
+      "name": "typeCol",
+      "label": "Colonne du type de la tâche",
+      "type": "column",
+      "tableFrom": "table",
+      "required": true,
+      "description": "Colonne contenant le type de la tâche."
+    },
+    {
+      "name": "dateCol",
+      "label": "Colonne de la date limite de la tâche",
+      "type": "column",
+      "tableFrom": "table",
+      "required": true,
+      "description": "Colonne contenant la date limite de la tâche."
+    },
+    {
+      "name": "startDateCol",
+      "label": "Colonne de la date de début de la tâche",
+      "type": "column",
+      "tableFrom": "table",
+      "required": true,
+      "description": "Colonne contenant la date de début de la tâche."
+    },
+    {
+      "name": "descCol",
+      "label": "Colonne de la description de la tâche",
+      "type": "column",
+      "tableFrom": "table",
+      "required": true,
+      "description": "Colonne contenant la description de la tâche."
+    },
+    {
+      "name": "folderCol",
+      "label": "Colonne du dossier de la tâche",
+      "type": "column",
+      "tableFrom": "table",
+      "required": false,
+      "description": "Colonne contenant le dossier de la tâche (optionnel)."
     }
   ]
 }
