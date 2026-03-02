@@ -1,70 +1,22 @@
 {
   "name": "Kanban Widget",
-  "description": "Widget Kanban pour gérer les tâches avec priorités, états, types et assignés",
+  "description": "Widget Kanban pour gérer les tâches",
   "version": "1.0.0",
-  "author": "Ton Nom",
+  "author": "Sylvain Besson",
   "type": "Widget",
   "entrypoint": "main.js",
   "optionsSchema": {
-    "table": {
-      "type": "Table",
-      "label": "Table des tâches",
-      "required": true
-    },
-    "titleCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Nom"
-    },
-    "descCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Description"
-    },
-    "statusCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne État"
-    },
-    "priorityCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Priorité"
-    },
-    "typeCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Type"
-    },
-    "dateCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Deadline"
-    },
-    "startDateCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Début"
-    },
-    "projectCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Projet"
-    },
-    "projectRefCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Référence Projet"
-    },
-    "assigneeCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Assignés"
-    },
-    "assigneeRefCol": {
-      "type": "Column",
-      "table": "table",
-      "label": "Colonne Référence Assignés"
-    }
+    "table": { "type": "Table", "label": "Table des tâches", "required": true },
+    "titleCol": { "type": "Column", "table": "table", "label": "Colonne Nom" },
+    "descCol": { "type": "Column", "table": "table", "label": "Colonne Description" },
+    "statusCol": { "type": "Column", "table": "table", "label": "Colonne État" },
+    "priorityCol": { "type": "Column", "table": "table", "label": "Colonne Priorité" },
+    "typeCol": { "type": "Column", "table": "table", "label": "Colonne Type" },
+    "dateCol": { "type": "Column", "table": "table", "label": "Colonne Deadline" },
+    "startDateCol": { "type": "Column", "table": "table", "label": "Colonne Début" },
+    "projectCol": { "type": "Column", "table": "table", "label": "Colonne Projet" },
+    "projectRefCol": { "type": "Column", "table": "table", "label": "Colonne Référence Projet" },
+    "assigneeCol": { "type": "Column", "table": "table", "label": "Colonne Assignés" },
+    "assigneeRefCol": { "type": "Column", "table": "table", "label": "Colonne Référence Assignés" },
   }
 }
