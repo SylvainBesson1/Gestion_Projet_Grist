@@ -1,22 +1,48 @@
 {
-    "name": "@SylvainBesson1/Gestion_Projet_Grist",
-    "description": "Kanban",
-    "homePage": "https://github.com/SylvainBesson1/Gestion_Projet_Grist",
-    "version": "1",
-    "grist": {
+  "name": "Kanban Tâches",
+  "id": "kanban-taches",
+  "version": "1.0.0",
+  "description": "Kanban pour tâches Grist",
+  "gristVersion": "1.0.0",
+  "components": [
+    {
+      "kind": "widget",
       "name": "Kanban",
-      "url": "https://sylvainbesson1.github.io/Gestion_Projet_Grist/kanban-widget/",
-      "widgetId": "@SylvainBesson1/Gestion_Projet_Grist",
-      "published": true,
-      "accessLevel": "full",
-      "renderAfterReady": true,
-      "description": "Kanban",
-      "authors": [
+      "url": "index.html",
+      "options": [
         {
-          "name": "Sylvain Besson / CNRS"
-                }
-      ],
-      "isGristLabsMaintained": false
+          "name": "table",
+          "label": "Table des tâches",
+          "type": "table",
+          "required": true
+        },
+        {
+          "name": "titleCol",
+          "label": "Nom de la tâche",
+          "type": "column",
+          "tableFrom": "table",
+          "required": true
+        },
+        {
+          "name": "statusCol",
+          "label": "Colonne État",
+          "type": "column",
+          "tableFrom": "table",
+          "required": true
+        },
+        {
+          "name": "projectCol",
+          "label": "Projet (Ref)",
+          "type": "column",
+          "tableFrom": "table"
+        },
+        {
+          "name": "assigneeCol",
+          "label": "Assignés (RefList)",
+          "type": "column",
+          "tableFrom": "table"
+        }
+      ]
     }
-  }
-  
+  ]
+}
