@@ -946,23 +946,30 @@ async function init() {
   try {
     await grist.ready({ requiredAccess: 'full' });
 
-    
-    // Attendre les options
-    grist.onOptions((newOptions) => {
+    grist.onOptions(async (newOptions) => {
       options = newOptions;
       console.log("Options reçues :", options);
-      if (options.table) {
-        loadSchema().then(loadAllData);
-      } else {
-        console.error("La table n'est pas définie dans les options.");
+
+      if (!options.table) {
+        console.warn("Aucune table sélectionnée dans le volet droit.");
+        return;
       }
+
+      gristReady = true;
+
+      // Charger le schéma et les données uniquement après que options soit défini
+      await loadSchema();
+      await loadAllData();
+      loadFilters();
     });
 
-    gristReady = true;
-    loadFilters();
+    grist.onRecords(async () => {
+      if (!options?.table) return;
+      await loadAllData();
+    });
 
-    grist.onRecords(async () => await loadAllData());
     grist.onRecord(r => {
+      if (!options?.table) return;
       if (r?.id && r.id !== selectedTaskId) {
         selectedTaskId = r.id;
         document.querySelectorAll('.task-card')
