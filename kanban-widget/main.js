@@ -1,3 +1,94 @@
+// ========== INITIALIZATION ==========
+let W;
+let T;
+
+window.addEventListener('load', async (event) => {
+    // Create widget manager object
+    W = new WidgetSDK();
+
+    // Load localization
+    T = await W.loadTranslations(['widget.js']);
+
+    // Configure options
+    W.configureOptions(
+        [
+            {
+                name: 'columns',
+                label: 'Comportement des colonnes',
+                description: 'Configurez le comportement de chaque colonne.',
+                group: 'Colonnes',
+                type: 'object',
+                template: [
+                    WidgetSDK.newItem('addbutton', true, 'Ajouter une carte', 'Si coché, affiche un bouton pour ajouter une carte à la colonne.'),
+                    WidgetSDK.newItem('isdone', false, 'Terminé', 'Si coché, les cartes dans cette colonne sont considérées comme terminées.'),
+                    WidgetSDK.newItem('useconfetti', false, 'Confettis', 'Si coché, des confettis apparaissent lorsqu\'une carte entre dans cette colonne.')
+                ],
+                columnId: 'statusCol'
+            },
+            WidgetSDK.newItem('statusCol', null, 'Colonne de l\'état', 'Colonne contenant l\'état de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('titleCol', null, 'Titre de la tâche', 'Colonne contenant le titre de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('projectRefCol', null, 'Référence du projet', 'Colonne contenant la référence au projet.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('projectNameCol', 'Nom', 'Nom de la colonne "Nom" dans la référence du projet', 'Nom de la colonne contenant le nom du projet dans la référence.', 'Colonnes'),
+            WidgetSDK.newItem('assigneeRefCol', null, 'Référence des accompagnateurs', 'Colonne contenant la référence aux accompagnateurs.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('assigneeNameCol', 'Nom', 'Nom de la colonne "Nom" dans la référence des accompagnateurs', 'Nom de la colonne contenant le nom des accompagnateurs dans la référence.', 'Colonnes'),
+            WidgetSDK.newItem('priorityCol', null, 'Priorité', 'Colonne contenant la priorité de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('typeCol', null, 'Type', 'Colonne contenant le type de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('dateCol', null, 'Date limite', 'Colonne contenant la date limite de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('startDateCol', null, 'Date de début', 'Colonne contenant la date de début de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),
+            WidgetSDK.newItem('descCol', null, 'Description', 'Colonne contenant la description de la tâche.', 'Colonnes', {type: 'column', tableFrom: 'table', required: true}),        ],
+        '#config-view',
+        '#main-view',
+        {onOptChange: optionsChanged, onOptLoad: optionsChanged}
+    );
+
+    // Configure Columns meta data
+    W.initMetaData();
+
+    // Initialize widget subscription to Grist
+    W.ready({
+        requiredAccess: 'full',
+        allowSelectBy: true,
+        columns: [
+            {name: 'statusCol', title: 'État', description: 'Définir la colonne Kanban', type: 'Choice', strictType: true},
+            {name: 'titleCol', title: 'Titre', description: 'Nom de la tâche', type: 'Any'},
+            {name: 'projectRefCol', title: 'Référence du projet', description: 'Référence associée à la tâche', type: 'Any', optional: true},
+            {name: 'assigneeRefCol', title: 'Référence des accompagnateurs', description: 'Référence aux accompagnateurs', type: 'Any', optional: true},
+            {name: 'priorityCol', title: 'Priorité', description: 'Priorité de la tâche', type: 'Choice', optional: true},
+            {name: 'typeCol', title: 'Type', description: 'Type de la tâche', type: 'Choice', optional: true},
+            {name: 'dateCol', title: 'Date limite', description: 'Date limite de la tâche', type: 'Date', optional: true},
+            {name: 'startDateCol', title: 'Date de début', description: 'Date de début de la tâche', type: 'Date', optional: true},
+            {name: 'descCol', title: 'Description', description: 'Description de la tâche', type: 'Any', optional: true},        ],
+        async onEditOptions() {
+            await W.showConfig();
+        }
+    });
+
+    // Subscribe to Grist onRecords
+    W.onRecords(loadAllData, {expandRefs: false, keepEncoded: false, mapRef: true});
+
+    // When all configurations have been loaded, proceed to widget initialization
+    W.isLoaded().then(async () => {
+        W.initDone = true;
+    });
+
+    // Trigger event when mapping is changed
+    grist.on('message', async (e) => {
+        if (e.mappingsChange) mappingChanged();
+    });
+});
+
+// Function to handle option changes
+async function optionsChanged(opts) {
+    await W.isMapped();
+    loadAllData();
+}
+
+// Function to handle mapping changes
+function mappingChanged() {
+    buildDynamicConfigs();
+    loadAllData();
+}
+
 /* -------------------------------------------------
    CONSTANTES & VARIABLES GLOBALES
 ------------------------------------------------- */
@@ -7,6 +98,7 @@ const DEFAULT_ETAT_COLORS = ['#7c2d12', '#ef4444', '#3b82f6', '#f59e0b', '#10b98
 /* ----------------------------------------------
  OPTIONS SCHEMA
 ---------------------------------------------------- */
+
 const OPTIONS_SCHEMA = {
   table: {
     type: 'Table',
@@ -415,19 +507,20 @@ function render() {
 }
 
 function getProjectNameFromRef(task) {
-  if (!task || !options.projectRefCol) return null;
-  const ref = task[options.projectRefCol];
-  if (!ref) return null;
-  return ref[options.projectNameCol] || "Inconnu";
+    if (!task || !options.projectRefCol) return null;
+    const ref = task[options.projectRefCol];
+    if (!ref) return null;
+    return ref[options.projectNameCol] || "Inconnu";
 }
 
 function getAssigneeNameFromRef(assigneeRef) {
-  if (!assigneeRef || !options.assigneeNameCol) return "Inconnu";
-  if (typeof assigneeRef === 'object' && assigneeRef[options.assigneeNameCol]) {
-    return assigneeRef[options.assigneeNameCol];
-  }
-  return "Inconnu";
+    if (!assigneeRef || !options.assigneeNameCol) return "Inconnu";
+    if (typeof assigneeRef === 'object' && assigneeRef[options.assigneeNameCol]) {
+        return assigneeRef[options.assigneeNameCol];
+    }
+    return "Inconnu";
 }
+
 
 function renderTaskCard(task) {
   if (!options) return '';
@@ -892,27 +985,26 @@ async function deleteTask() {
 /* -------------------------------------------------
    CHARGEMENT COMPLET (tables + UI)
 ------------------------------------------------- */
-async function loadAllData() {
-  if (!options) return;
+async function loadAllData(recs) {
+    if (!options) return;
 
-  document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('loadingOverlay').style.display = 'flex';
 
-  try {
-    // Charger la table des tâches
-    const tachesData = await grist.docApi.fetchTable(options.table);
-    taches = convertGristToRecords(tachesData).filter(r => !r.Supprime);
+    try {
+        taches = recs.filter(r => !r.Supprime);
 
-    buildDynamicConfigs();
-    buildColumns();
-    updateFilterMenus();
-    render();
-  } catch (e) {
-    console.error('Erreur lors du chargement des données:', e);
-    showToast(`Erreur de chargement : ${e.message}`, 'error');
-  } finally {
-    document.getElementById('loadingOverlay').style.display = 'none';
-  }
+        buildDynamicConfigs();
+        buildColumns();
+        updateFilterMenus();
+        render();
+    } catch (e) {
+        console.error('Erreur lors du chargement des données:', e);
+        showToast(`Erreur de chargement : ${e.message}`, 'error');
+    } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
 }
+
 
 async function checkAndUpdateOverdueTasks() {
   if (!options?.dateCol || !options?.priorityCol) return;
@@ -943,47 +1035,26 @@ async function checkAndUpdateOverdueTasks() {
    INITIALISATION
 ------------------------------------------------- */
 async function init() {
-  try {
-    await grist.ready({ requiredAccess: 'full' });
-
-    grist.onOptions(async (newOptions) => {
-      options = newOptions;
-      console.log("Options reçues :", options);
-
-      if (!options.table) {
-        console.warn("Aucune table sélectionnée dans le volet droit.");
-        return;
-      }
-
-      gristReady = true;
-
-      // Charger le schéma et les données uniquement après que options soit défini
-      await loadSchema();
-      await loadAllData();
-      loadFilters();
-    });
-
-    grist.onRecords(async () => {
-      if (!options?.table) return;
-      await loadAllData();
-    });
-
-    grist.onRecord(r => {
-      if (!options?.table) return;
-      if (r?.id && r.id !== selectedTaskId) {
-        selectedTaskId = r.id;
-        document.querySelectorAll('.task-card')
-          .forEach(c => c.classList.toggle('selected', parseInt(c.dataset.id) === selectedTaskId));
-      }
-    });
-  } catch (e) {
-    console.error('Erreur fatale : Grist est indisponible', e);
-    showToast('❌ Erreur : Impossible de se connecter à Grist. Veuillez vérifier votre connexion.', 'error');
-    document.getElementById('loadingOverlay').style.display = 'none';
-    document.body.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Erreur : Impossible de se connecter à Grist. L\'application ne peut pas fonctionner sans connexion.</div>';
-    throw new Error('Grist est requis pour exécuter cette application.');
-  }
+    try {
+        await W.isLoaded();
+        loadFilters();
+        grist.onRecords(async () => await loadAllData());
+        grist.onRecord(r => {
+            if (r?.id && r.id !== selectedTaskId) {
+                selectedTaskId = r.id;
+                document.querySelectorAll('.task-card')
+                    .forEach(c => c.classList.toggle('selected', parseInt(c.dataset.id) === selectedTaskId));
+            }
+        });
+    } catch (e) {
+        console.error('Erreur fatale : Grist est indisponible', e);
+        showToast('❌ Erreur : Impossible de se connecter à Grist. Veuillez vérifier votre connexion.', 'error');
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.body.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Erreur : Impossible de se connecter à Grist. L\'application ne peut pas fonctionner sans connexion.</div>';
+        throw new Error('Grist est requis pour exécuter cette application.');
+    }
 }
+
 
 // Écouteurs globaux
 document.addEventListener('click', e => {
