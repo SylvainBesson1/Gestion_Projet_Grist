@@ -7,7 +7,7 @@
     {
       "kind": "widget",
       "name": "Kanban",
-      "url": "index.html",
+      "url": "https://sylvainbesson1.github.io/Gestion_Projet_Grist/kanban-widget/index.html",
       "options": [
         {
           "name": "table",
