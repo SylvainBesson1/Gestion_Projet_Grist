@@ -505,7 +505,7 @@ function getAssigneeNameFromRef(assigneeRef) {
 }
 
 
-unction renderTaskCard(task) {
+function renderTaskCard(task) {
     if (!options) return '';
 
     const priority = getTaskPriority(task);
